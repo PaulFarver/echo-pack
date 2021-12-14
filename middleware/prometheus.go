@@ -36,11 +36,11 @@ type PrometheusConfig struct {
 	HistogramOpts prometheus.HistogramOpts
 }
 
-func Prometheus() echo.MiddlewareFunc {
+func Prometheus() (echo.MiddlewareFunc, error) {
 	return PrometheusWithConfig(DefaultPrometheusConfig)
 }
 
-func PrometheusWithConfig(config PrometheusConfig) echo.MiddlewareFunc {
+func PrometheusWithConfig(config PrometheusConfig) (echo.MiddlewareFunc, error) {
 	registerer := config.Registerer
 	if registerer == nil {
 		registerer = prometheus.DefaultRegisterer
@@ -63,7 +63,10 @@ func PrometheusWithConfig(config PrometheusConfig) echo.MiddlewareFunc {
 	}
 
 	requestHistogram := prometheus.NewHistogramVec(config.HistogramOpts, []string{"status", "path"})
-	config.Registerer.MustRegister(requestHistogram)
+	err := config.Registerer.Register(requestHistogram)
+	if err != nil {
+		return nil, err
+	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -85,7 +88,7 @@ func PrometheusWithConfig(config PrometheusConfig) echo.MiddlewareFunc {
 
 			return err
 		}
-	}
+	}, nil
 }
 
 type ExposeConfig struct {
