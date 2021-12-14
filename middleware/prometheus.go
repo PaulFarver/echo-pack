@@ -41,8 +41,30 @@ func Prometheus() echo.MiddlewareFunc {
 }
 
 func PrometheusWithConfig(config PrometheusConfig) echo.MiddlewareFunc {
+	registerer := config.Registerer
+	if registerer == nil {
+		registerer = prometheus.DefaultRegisterer
+	}
+
+	skipper := config.Skipper
+	if skipper == nil {
+		skipper = middleware.DefaultSkipper
+	}
+
+	histogramOpts := config.HistogramOpts
+	if histogramOpts.Name == "" {
+		histogramOpts.Name = "requests"
+	}
+	if histogramOpts.Help == "" {
+		histogramOpts.Help = "A histogram of request times and status codes"
+	}
+	if histogramOpts.Buckets == nil {
+		histogramOpts.Buckets = prometheus.DefBuckets
+	}
+
 	requestHistogram := prometheus.NewHistogramVec(config.HistogramOpts, []string{"status", "path"})
 	config.Registerer.MustRegister(requestHistogram)
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if config.Skipper(c) {
