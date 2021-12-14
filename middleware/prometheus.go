@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -65,7 +66,7 @@ func PrometheusWithConfig(config PrometheusConfig) (echo.MiddlewareFunc, error) 
 	requestHistogram := prometheus.NewHistogramVec(config.HistogramOpts, []string{"status", "path"})
 	err := config.Registerer.Register(requestHistogram)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Failed to register request histogram")
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
