@@ -21,14 +21,16 @@ type (
 	}
 )
 
-var (
-	// DefaultRequestIDConfig is the default RequestID middleware config.
-	DefaultRequestIDConfig = RequestIDConfig{
-		Header:    echo.HeaderXRequestID,
-		Skipper:   middleware.DefaultSkipper,
-		Generator: generator,
-	}
+const (
+	DefaultRequestIDLength = 32
 )
+
+// DefaultRequestIDConfig is the default RequestID middleware config.
+var DefaultRequestIDConfig = RequestIDConfig{
+	Header:    echo.HeaderXRequestID,
+	Skipper:   middleware.DefaultSkipper,
+	Generator: generator,
+}
 
 // RequestID returns a X-Request-ID middleware.
 func RequestID() echo.MiddlewareFunc {
@@ -60,6 +62,7 @@ func RequestIDWithConfig(config RequestIDConfig) echo.MiddlewareFunc {
 			rid := req.Header.Get(config.Header)
 			if rid == "" {
 				rid = config.Generator()
+				req.Header.Set(config.Header, rid)
 			}
 			res.Header().Set(config.Header, rid)
 
@@ -69,5 +72,5 @@ func RequestIDWithConfig(config RequestIDConfig) echo.MiddlewareFunc {
 }
 
 func generator() string {
-	return random.String(32)
+	return random.String(DefaultRequestIDLength)
 }
